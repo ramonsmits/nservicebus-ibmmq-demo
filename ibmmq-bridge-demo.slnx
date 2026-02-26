@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/IBMMQ/">
+    <Project Path="src/Acme.Billing/Acme.Billing.csproj" />
+    <Project Path="src/Acme.Dashboard/Acme.Dashboard.csproj" />
+    <Project Path="src/Acme.Sales/Acme.Sales.csproj" />
+    <Project Path="src/Acme.Sender/Acme.Sender.csproj" />
+    <Project Path="src/Acme.LegacySender/Acme.LegacySender.csproj" />
+  </Folder>
+  <Folder Name="/RabbitMQ/">
+    <Project Path="src/Acme.Shipping/Acme.Shipping.csproj" />
+  </Folder>
+  <Project Path="src/Acme.Bridge/Acme.Bridge.csproj" />
+  <Project Path="src/Acme.Shared/Acme.Shared.csproj" />
+</Solution>

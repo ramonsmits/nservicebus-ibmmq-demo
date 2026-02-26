@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<server>
+    <basicRegistry id="basic" realm="defaultRealm">
+        <user name="admin" password="passw0rd"/>
+        <group name="MQWebAdmin">
+            <member name="admin"/>
+        </group>
+    </basicRegistry>
+
+    <authorization-roles id="com.ibm.mq.console.MQWebAdmin">
+        <security-role name="MQWebAdmin">
+            <user name="admin"/>
+        </security-role>
+    </authorization-roles>
+
+    <authorization-roles id="com.ibm.mq.rest.MQWebAdmin">
+        <security-role name="MQWebAdmin">
+            <user name="admin"/>
+        </security-role>
+    </authorization-roles>
+</server>

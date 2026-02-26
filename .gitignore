@@ -1,0 +1,10 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+.idea/
+*.DotSettings.user
+.playwright-cli
+docker-compose.override.yml
+.packages/

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="IBMMQDotnetClient" />
+    <PackageReference Include="NServiceBus" />
+    <PackageReference Include="System.Text.Encoding.CodePages" />
+    <PackageReference Include="NServiceBus.Extensions.Hosting" />
+    <PackageReference Include="NServiceBus.Heartbeat" />
+    <PackageReference Include="NServiceBus.Metrics.ServiceControl" />
+    <PackageReference Include="NServiceBus.Transport.IBMMQ" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Acme.Shared\Acme.Shared.csproj" />
+  </ItemGroup>
+</Project>

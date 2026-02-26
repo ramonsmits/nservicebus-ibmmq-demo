@@ -1,0 +1,327 @@
+# NOTE: Linux default fs.inotify.max_user_instances=128 is too low for this
+# stack. .NET uses multiple inotify instances per process for config reloading.
+# Raise it:  sudo sysctl fs.inotify.max_user_instances=512
+# Persist:   echo 'fs.inotify.max_user_instances=512' | sudo tee /etc/sysctl.d/99-inotify.conf
+
+name: ibmmq-demo
+
+services:
+  # --- Infrastructure ---
+
+  ibmmq:
+    container_name: ibmmq
+    build:
+      context: .
+      dockerfile: ibmmq.Dockerfile
+    security_opt:
+      - label=disable
+    ports:
+      - "1414:1414"
+      - "9443:9443"
+    environment:
+      LICENSE: accept
+      MQ_QMGR_NAME: QM1
+      MQ_DEV: "false"
+      MQ_ADMIN_PASSWORD: passw0rd
+    healthcheck:
+      test: ["CMD-SHELL", "chkmqready QM1"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+    volumes:
+      - ibmmq-data:/mnt/mqm
+      - ./ibmmq-mqsc.ini:/etc/mqm/99-servicecontrol.mqsc:ro
+      - ./ibmmq-mqwebuser.xml:/etc/mqm/web/installations/Installation1/servers/mqweb/mqwebuser.xml:ro
+
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:4-management
+    security_opt:
+      - label=disable
+    ports:
+#      - "5672:5672"
+      - "15672:15672"
+    # Workaround: podman-compose creates .erlang.cookie with root ownership;
+    # Erlang can't recreate it under rootless podman's umask, so we pre-create it.
+    entrypoint: ["/bin/bash", "-c", "rm -f /var/lib/rabbitmq/.erlang.cookie && gosu rabbitmq bash -c 'openssl rand -hex 16 > /var/lib/rabbitmq/.erlang.cookie && chmod 400 /var/lib/rabbitmq/.erlang.cookie' && exec docker-entrypoint.sh rabbitmq-server"]
+    command: []
+    volumes:
+      - ./rabbitmq.conf:/etc/rabbitmq/conf.d/99-disable-oauth.conf:ro,z
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+
+  ravendb:
+    container_name: ravendb
+    image: particular/servicecontrol-ravendb:6
+    security_opt:
+      - label=disable
+    ports:
+      - "8181:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/databases || exit 1"]
+      interval: 10s
+      timeout: 5s
+      start_period: 15s
+      retries: 5
+    # tmpfs:
+    #   - /var/lib/ravendb/data
+
+  # --- ServiceControl (IBM MQ native) ---
+
+  sc-ibmmq:
+    container_name: sc-ibmmq
+    image: ghcr.io/particular/servicecontrol:pr-5350
+    # ports:
+    #   - "33333:33333"
+    environment:
+      TRANSPORTTYPE: IBMMQ
+      CONNECTIONSTRING: mq://admin:passw0rd@ibmmq:1414/QM1?channel=ADMIN.SVRCONN
+      ServiceControl_TransportTests_IBMMQ_ConnectionString: mq://admin:passw0rd@ibmmq:1414/QM1?channel=ADMIN.SVRCONN
+      RAVENDB_CONNECTIONSTRING: http://ravendb:8080
+      REMOTEINSTANCES: '[{"api_uri":"http://sc-audit-ibmmq:44444/api"},{"api_uri":"http://sc-rabbitmq:33333/api"},{"api_uri":"http://sc-audit-rabbitmq:44444/api"}]'
+      ForwardErrorMessages: "false"
+      ErrorRetentionPeriod: "15"
+      HeartbeatGracePeriod: "00:02:00"
+      SERVICECONTROL_MAXIMUMCONCURRENCYLEVEL: "4"
+      # IBM MQ topic names are limited to 48 characters. Some ServiceControl.Contracts
+      # event types (e.g. MessageFailureResolvedManually) exceed this even without a
+      # namespace prefix. Disable until the IBMMQ transport supports a topic name mapping.
+      DisableExternalIntegrationsPublishing: "true"
+    command: --setup-and-run
+    restart: "no"
+    depends_on:
+      ravendb:
+        condition: service_healthy
+      ibmmq:
+        condition: service_healthy
+
+  sc-audit-ibmmq:
+    container_name: sc-audit-ibmmq
+    image: ghcr.io/particular/servicecontrol-audit:pr-5350
+    # ports:
+    #   - "44444:44444"
+    environment:
+      TRANSPORTTYPE: IBMMQ
+      CONNECTIONSTRING: mq://admin:passw0rd@ibmmq:1414/QM1?channel=ADMIN.SVRCONN
+      ServiceControl_TransportTests_IBMMQ_ConnectionString: mq://admin:passw0rd@ibmmq:1414/QM1?channel=ADMIN.SVRCONN
+      RAVENDB_CONNECTIONSTRING: http://ravendb:8080
+      SERVICECONTROLQUEUEADDRESS: Particular.ServiceControl
+      AuditRetentionPeriod: "0.03:00:00"
+      SERVICECONTROL_AUDIT_MAXIMUMCONCURRENCYLEVEL: "10"
+    command: --setup-and-run
+    restart: "no"
+    depends_on:
+      ravendb:
+        condition: service_healthy
+      ibmmq:
+        condition: service_healthy
+
+  sc-mon-ibmmq:
+    container_name: sc-mon-ibmmq
+    image: ghcr.io/particular/servicecontrol-monitoring:pr-5350
+    # ports:
+    #   - "33633:33633"
+    environment:
+      TRANSPORTTYPE: IBMMQ
+      CONNECTIONSTRING: mq://admin:passw0rd@ibmmq:1414/QM1?channel=ADMIN.SVRCONN
+      ServiceControl_TransportTests_IBMMQ_ConnectionString: mq://admin:passw0rd@ibmmq:1414/QM1?channel=ADMIN.SVRCONN
+    command: --setup-and-run
+    restart: "no"
+    depends_on:
+      ibmmq:
+        condition: service_healthy
+
+  # --- ServiceControl (RabbitMQ native) ---
+
+  sc-rabbitmq:
+    container_name: sc-rabbitmq
+    image: ghcr.io/particular/servicecontrol:pr-5350
+    environment:
+      TRANSPORTTYPE: RabbitMQ.QuorumConventionalRouting
+      CONNECTIONSTRING: host=rabbitmq;username=guest;password=guest
+      RAVENDB_CONNECTIONSTRING: http://ravendb:8080
+      REMOTEINSTANCES: '[{"api_uri":"http://sc-audit-rabbitmq:44444/api"}]'
+      ForwardErrorMessages: "false"
+      ErrorRetentionPeriod: "15"
+    command: --setup-and-run
+    restart: "no"
+    depends_on:
+      ravendb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  sc-audit-rabbitmq:
+    container_name: sc-audit-rabbitmq
+    image: ghcr.io/particular/servicecontrol-audit:pr-5350
+    environment:
+      TRANSPORTTYPE: RabbitMQ.QuorumConventionalRouting
+      CONNECTIONSTRING: host=rabbitmq;username=guest;password=guest
+      RAVENDB_CONNECTIONSTRING: http://ravendb:8080
+      SERVICECONTROLQUEUEADDRESS: Particular.ServiceControl
+      AuditRetentionPeriod: "0.03:00:00"
+    command: --setup-and-run
+    restart: "no"
+    depends_on:
+      ravendb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  sc-mon-rabbitmq:
+    container_name: sc-mon-rabbitmq
+    image: ghcr.io/particular/servicecontrol-monitoring:pr-5350
+    environment:
+      TRANSPORTTYPE: RabbitMQ.QuorumConventionalRouting
+      CONNECTIONSTRING: host=rabbitmq;username=guest;password=guest
+    command: --setup-and-run
+    restart: "no"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  servicepulse:
+    container_name: servicepulse
+    image: servicepulse:dev
+    ports:
+      - "9090:9090"
+    environment:
+      SERVICECONTROL_URL: http://sc-ibmmq:33333/api
+      MONITORING_URL: http://sc-mon-ibmmq:33633
+    restart: "no"
+    depends_on:
+      - sc-ibmmq
+      - sc-mon-ibmmq
+      - sc-mon-rabbitmq
+
+  servicepulse-rabbitmq:
+    container_name: servicepulse-rabbitmq
+    image: particular/servicepulse:latest
+    ports:
+      - "9091:9090"
+    environment:
+      SERVICECONTROL_URL: http://sc-rabbitmq:33333/api
+      MONITORING_URL: http://sc-mon-rabbitmq:33633
+    restart: "no"
+    depends_on:
+      - sc-rabbitmq
+      - sc-mon-rabbitmq
+
+  # --- Observability ---
+
+  jaeger:
+    container_name: jaeger
+    image: jaegertracing/jaeger:latest
+    security_opt:
+      - label=disable
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+    # tmpfs:
+    #   - /tmp
+
+  # --- Application Endpoints ---
+
+  sales:
+    container_name: sales
+    hostname: sales
+    build:
+      context: .
+      dockerfile: src/Acme.Sales/Dockerfile
+    environment:
+      IBMMQ_HOST: ibmmq
+      IBMMQ_USER: sales
+      IBMMQ_CHANNEL: APP.SVRCONN
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+    restart: "no"
+    depends_on:
+      ibmmq:
+        condition: service_healthy
+
+  shipping:
+    container_name: shipping
+    hostname: shipping
+    build:
+      context: .
+      dockerfile: src/Acme.Shipping/Dockerfile
+    environment:
+      RABBITMQ_CONNECTIONSTRING: host=rabbitmq;username=guest;password=guest
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+    restart: "no"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+
+  billing:
+    container_name: billing
+    hostname: billing
+    build:
+      context: .
+      dockerfile: src/Acme.Billing/Dockerfile
+    environment:
+      IBMMQ_HOST: ibmmq
+      IBMMQ_USER: billing
+      IBMMQ_CHANNEL: APP.SVRCONN
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+    restart: "no"
+    depends_on:
+      ibmmq:
+        condition: service_healthy
+
+  dashboard:
+    container_name: dashboard
+    hostname: dashboard
+    build:
+      context: .
+      dockerfile: src/Acme.Dashboard/Dockerfile
+    ports:
+      - "6001:8080"
+    environment:
+      IBMMQ_HOST: ibmmq
+      IBMMQ_USER: dashboard
+      IBMMQ_CHANNEL: APP.SVRCONN
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://jaeger:4317
+    restart: "no"
+    depends_on:
+      ibmmq:
+        condition: service_healthy
+      bridge:
+        condition: service_started
+
+  bridge:
+    container_name: bridge
+    hostname: bridge
+    build:
+      context: .
+      dockerfile: src/Acme.Bridge/Dockerfile
+    environment:
+      IBMMQ_HOST: ibmmq
+      IBMMQ_USER: bridge
+      IBMMQ_CHANNEL: APP.SVRCONN
+      RABBITMQ_CONNECTIONSTRING: host=rabbitmq;username=guest;password=guest
+    restart: "no"
+    depends_on:
+      ibmmq:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      sc-ibmmq:
+        condition: service_started
+      sc-audit-ibmmq:
+        condition: service_started
+      sc-mon-ibmmq:
+        condition: service_started
+      sales:
+        condition: service_started
+      billing:
+        condition: service_started
+      shipping:
+        condition: service_started
+
+volumes:
+  ibmmq-data:

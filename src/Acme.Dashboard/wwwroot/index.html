@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Acme Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 0.75rem 1rem;
+            overflow: hidden;
+        }
+        header {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 0.75rem;
+            flex-shrink: 0;
+        }
+        h1 {
+            font-size: 1.2rem;
+            color: #00d4ff;
+            white-space: nowrap;
+        }
+        button {
+            background: #0066cc;
+            color: #fff;
+            border: none;
+            padding: 0.5rem 1.2rem;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background: #0080ff; }
+        button:active { background: #004499; }
+        button:disabled { background: #444; cursor: not-allowed; }
+        .main {
+            display: flex;
+            gap: 0.75rem;
+            flex: 1;
+            min-height: 0;
+        }
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            width: 220px;
+            flex-shrink: 0;
+            overflow-y: auto;
+        }
+        .order-bar {
+            background: #0d0d1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 0.6rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+        .order-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .order-buttons button { flex: 1; }
+        .order-buttons button.running { background: #cc3300; }
+        .order-buttons button.running:hover { background: #ff4422; }
+        .auto-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .auto-controls input[type=range] { flex: 1; accent-color: #0066cc; }
+        .auto-label {
+            font-size: 0.7rem;
+            color: #888;
+            white-space: nowrap;
+        }
+        .auto-label span { color: #e0e0e0; }
+        #log {
+            flex: 1;
+            background: #0d0d1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 0.75rem;
+            overflow-y: auto;
+            font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.75rem;
+            line-height: 1.5;
+            min-width: 0;
+        }
+        .entry {
+            padding: 0.15rem 0;
+            border-bottom: 1px solid #1a1a2e;
+        }
+        .entry .time { color: #666; }
+        .entry.sent { color: #4ecdc4; }
+        .entry.accepted { color: #ffe66d; }
+        .entry.confirmed { color: #a8e6cf; }
+        .entry.error { color: #ff6b6b; }
+        .status {
+            font-size: 0.7rem;
+            color: #666;
+            margin-bottom: 0.25rem;
+        }
+        .status.connected { color: #4ecdc4; }
+        .status.disconnected { color: #ff6b6b; }
+        nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+        nav a {
+            color: #888;
+            font-size: 0.7rem;
+            text-decoration: none;
+            padding: 0.2rem 0.5rem;
+            border: 1px solid #333;
+            border-radius: 4px;
+            transition: color 0.2s, border-color 0.2s;
+        }
+        nav a:hover { color: #00d4ff; border-color: #00d4ff; }
+        .sim-card {
+            background: #0d0d1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 0.6rem;
+        }
+        .sim-card h3 {
+            font-size: 0.75rem;
+            color: #00d4ff;
+            margin-bottom: 0.3rem;
+        }
+        .sim-card label {
+            display: block;
+            font-size: 0.65rem;
+            color: #888;
+            margin-top: 0.3rem;
+        }
+        .sim-card input[type=range] {
+            width: 100%;
+            accent-color: #0066cc;
+        }
+        .sim-card .value {
+            font-size: 0.7rem;
+            color: #e0e0e0;
+            text-align: right;
+        }
+        .sync-status {
+            font-size: 0.6rem;
+            font-weight: normal;
+            padding: 0.1rem 0.4rem;
+            border-radius: 3px;
+        }
+        .sync-status.pending { color: #ff6b6b; }
+        .sync-status.synced { color: #4ecdc4; }
+        .tx-mode {
+            display: flex;
+            gap: 0;
+            margin-top: 0.3rem;
+        }
+        .tx-mode button {
+            flex: 1;
+            padding: 0.25rem 0;
+            font-size: 0.6rem;
+            border-radius: 0;
+            background: #222;
+            color: #888;
+            border: 1px solid #444;
+        }
+        .tx-mode button:first-child { border-radius: 4px 0 0 4px; }
+        .tx-mode button:last-child { border-radius: 0 4px 4px 0; }
+        .tx-mode button.active { background: #00667f; color: #00d4ff; border-color: #00d4ff; }
+        .tx-mode button:hover:not(.active) { background: #333; color: #ccc; }
+        .tx-mode button:disabled { background: #222; color: #555; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Acme Order Dashboard</h1>
+        <nav>
+            <a href="https://localhost:9443" target="_blank">IBM MQ</a>
+            <a href="http://localhost:15672" target="_blank">RabbitMQ</a>
+            <a href="http://localhost:8181" target="_blank">RavenDB</a>
+            <a href="http://localhost:9090" target="_blank">ServicePulse</a>
+            <a href="http://localhost:16686" target="_blank">Jaeger</a>
+        </nav>
+        <div id="status" class="status disconnected">Connecting...</div>
+    </header>
+    <div class="main">
+        <div class="sidebar">
+            <div class="order-bar">
+                <div class="order-buttons">
+                    <button id="placeOrder" onclick="placeOrder()">Place Order</button>
+                    <button id="placeLegacy" onclick="placeLegacyOrder()">Legacy Order</button>
+                    <button id="autoToggle" onclick="toggleAutoOrder()">Start Auto</button>
+                </div>
+                <div class="auto-controls">
+                    <input type="range" min="0" max="1000" value="350" id="autoSlider" />
+                    <span class="auto-label"><span id="autoIntervalDisplay">1.0 s</span></span>
+                </div>
+            </div>
+            <div id="simulation"></div>
+        </div>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        const endpoints = ['Acme.Dashboard', 'Acme.Sales', 'Acme.Billing', 'Acme.Shipping'];
+        const rabbitmqEndpoints = new Set(['Acme.Shipping']);
+        const simContainer = document.getElementById('simulation');
+
+        function delayToSlider(ms) {
+            if (ms <= 0) return 0;
+            return Math.round(1000 * Math.log10(1 + ms * 9 / 60000));
+        }
+
+        // Log scale: slider 0..1000 → concurrency 1..256
+        function sliderToConcurrency(pos) {
+            if (pos <= 0) return 1;
+            return Math.round(Math.pow(2, 8 * pos / 1000));
+        }
+
+        function concurrencyToSlider(c) {
+            if (c <= 1) return 0;
+            return Math.round(1000 * Math.log2(c) / 8);
+        }
+
+        function buildSimCards() {
+            for (const ep of endpoints) {
+                const short = ep.replace('Acme.', '');
+                const card = document.createElement('div');
+                card.className = 'sim-card';
+                card.innerHTML =
+                    '<h3>' + short + ' <span id="st-' + short + '" class="sync-status pending">pending</span></h3>' +
+                    '<label>Failure <span id="fv-' + short + '">-</span>%</label>' +
+                    '<input type="range" min="0" max="100" value="0" id="fr-' + short + '" disabled />' +
+                    '<label>Delay <span id="dv-' + short + '">-</span></label>' +
+                    '<input type="range" min="0" max="1000" value="0" id="dr-' + short + '" disabled />' +
+                    '<label>Concurrency <span id="cv-' + short + '">-</span></label>' +
+                    '<input type="range" min="0" max="1000" value="0" id="cr-' + short + '" disabled />' +
+                    '<label>Transaction Mode</label>' +
+                    '<div class="tx-mode" id="tx-' + short + '">' +
+                    '  <button data-mode="SendsAtomicWithReceive" disabled>Atomic</button>' +
+                    '  <button data-mode="ReceiveOnly" disabled>Receive Only</button>' +
+                    '  <button data-mode="None" disabled>None</button>' +
+                    '</div>';
+                simContainer.appendChild(card);
+
+                const fr = card.querySelector('#fr-' + short);
+                const dr = card.querySelector('#dr-' + short);
+                const cr = card.querySelector('#cr-' + short);
+                const fv = card.querySelector('#fv-' + short);
+                const dv = card.querySelector('#dv-' + short);
+                const cv = card.querySelector('#cv-' + short);
+
+                fr.addEventListener('input', () => { fv.textContent = fr.value; });
+                dr.addEventListener('input', () => { dv.textContent = formatDelay(sliderToDelay(dr.value)); });
+                cr.addEventListener('input', () => { cv.textContent = sliderToConcurrency(cr.value); });
+                fr.addEventListener('change', () => sendSettings(ep, fr, dr, cr));
+                dr.addEventListener('change', () => sendSettings(ep, fr, dr, cr));
+                cr.addEventListener('change', () => sendSettings(ep, fr, dr, cr));
+
+                const txDiv = card.querySelector('#tx-' + short);
+                txDiv.querySelectorAll('button').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        txDiv.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        sendSettings(ep, fr, dr, cr);
+                    });
+                });
+            }
+        }
+
+        function applySettings(ep, data) {
+            const short = ep.replace('Acme.', '');
+            const fr = document.getElementById('fr-' + short);
+            const dr = document.getElementById('dr-' + short);
+            const cr = document.getElementById('cr-' + short);
+            const fv = document.getElementById('fv-' + short);
+            const dv = document.getElementById('dv-' + short);
+            const cv = document.getElementById('cv-' + short);
+            const st = document.getElementById('st-' + short);
+
+            fr.value = data.failurePercentage;
+            fv.textContent = data.failurePercentage;
+            dr.value = delayToSlider(data.processingDelayMs);
+            dv.textContent = formatDelay(data.processingDelayMs);
+            cr.value = concurrencyToSlider(data.concurrency);
+            cv.textContent = data.concurrency;
+
+            fr.disabled = false;
+            dr.disabled = false;
+            cr.disabled = false;
+
+            const isRabbit = rabbitmqEndpoints.has(ep);
+            const defaultMode = isRabbit ? 'ReceiveOnly' : 'SendsAtomicWithReceive';
+            const txDiv = document.getElementById('tx-' + short);
+            txDiv.querySelectorAll('button').forEach(b => {
+                const unsupported = isRabbit && b.dataset.mode !== 'ReceiveOnly';
+                b.disabled = unsupported;
+                b.classList.toggle('active', b.dataset.mode === (data.transactionMode || defaultMode));
+            });
+
+            st.textContent = 'synced';
+            st.className = 'sync-status synced';
+        }
+
+        async function loadSettings() {
+            let allSynced = true;
+            for (const ep of endpoints) {
+                const short = ep.replace('Acme.', '');
+                if (document.getElementById('st-' + short).classList.contains('synced')) continue;
+                allSynced = false;
+                try {
+                    const res = await fetch('/api/simulation/' + encodeURIComponent(ep));
+                    if (res.ok) {
+                        applySettings(ep, await res.json());
+                    }
+                } catch (err) { /* will retry */ }
+            }
+            if (allSynced) clearInterval(settingsPoller);
+        }
+
+        function sliderToDelay(pos) {
+            if (pos <= 0) return 0;
+            return Math.round(60000 * (Math.pow(10, pos / 1000) - 1) / 9);
+        }
+
+        function formatDelay(ms) {
+            if (ms === 0) return '0 ms';
+            if (ms < 1000) return ms + ' ms';
+            return (ms / 1000).toFixed(1) + ' s';
+        }
+
+        async function sendSettings(endpoint, frSlider, drSlider, crSlider) {
+            const short = endpoint.replace('Acme.', '');
+            const txDiv = document.getElementById('tx-' + short);
+            const activeBtn = txDiv.querySelector('button.active');
+            const defaultMode = rabbitmqEndpoints.has(endpoint) ? 'ReceiveOnly' : 'SendsAtomicWithReceive';
+            const mode = activeBtn ? activeBtn.dataset.mode : defaultMode;
+            try {
+                await fetch('/api/simulation/' + encodeURIComponent(endpoint), {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        failurePercentage: parseInt(frSlider.value),
+                        processingDelayMs: sliderToDelay(parseInt(drSlider.value)),
+                        concurrency: sliderToConcurrency(parseInt(crSlider.value)),
+                        transactionMode: mode
+                    })
+                });
+            } catch (err) {
+                appendLog('Failed to update ' + endpoint + ': ' + err.message, 'error');
+            }
+        }
+
+        buildSimCards();
+        loadSettings();
+        const settingsPoller = setInterval(loadSettings, 5000);
+
+        const log = document.getElementById('log');
+        const status = document.getElementById('status');
+        const btn = document.getElementById('placeOrder');
+
+        const maxLogEntries = 500;
+        function appendLog(text, className) {
+            const entry = document.createElement('div');
+            entry.className = 'entry ' + className;
+            const time = new Date().toLocaleTimeString();
+            entry.innerHTML = '<span class="time">[' + time + ']</span> ' + text;
+            log.appendChild(entry);
+            while (log.childElementCount > maxLogEntries) log.removeChild(log.firstChild);
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function classifyMessage(msg) {
+            if (msg.startsWith('Sent')) return 'sent';
+            if (msg.startsWith('OrderAccepted')) return 'accepted';
+            if (msg.startsWith('OrderShipped')) return 'confirmed';
+            return '';
+        }
+
+        function connectSSE() {
+            const source = new EventSource('/api/events');
+
+            source.onopen = () => {
+                status.textContent = 'Connected';
+                status.className = 'status connected';
+            };
+
+            source.onmessage = (e) => {
+                appendLog(e.data, classifyMessage(e.data));
+            };
+
+            source.onerror = () => {
+                status.textContent = 'Disconnected — reconnecting...';
+                status.className = 'status disconnected';
+            };
+        }
+
+        async function placeOrder() {
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/place-order', { method: 'POST' });
+                if (!res.ok) {
+                    appendLog('Failed to place order: ' + res.statusText, 'error');
+                }
+            } catch (err) {
+                appendLog('Error: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function placeLegacyOrder() {
+            const legacyBtn = document.getElementById('placeLegacy');
+            legacyBtn.disabled = true;
+            try {
+                const res = await fetch('/api/place-order-legacy', { method: 'POST' });
+                if (!res.ok) {
+                    appendLog('Failed to place legacy order: ' + res.statusText, 'error');
+                }
+            } catch (err) {
+                appendLog('Error: ' + err.message, 'error');
+            } finally {
+                legacyBtn.disabled = false;
+            }
+        }
+
+        // Auto-order controls
+        const autoSlider = document.getElementById('autoSlider');
+        const autoDisplay = document.getElementById('autoIntervalDisplay');
+        const autoToggle = document.getElementById('autoToggle');
+        let autoTimer = null;
+
+        function sliderToInterval(pos) {
+            // Log scale: pos 0 = 0ms (as fast as possible), pos 1000 = 300000ms (5 min)
+            if (pos == 0) return 0;
+            return Math.round(100 * Math.pow(3000, pos / 1000));
+        }
+
+        function formatInterval(ms) {
+            if (ms < 1000) return ms + ' ms';
+            if (ms < 60000) return (ms / 1000).toFixed(1) + ' s';
+            return (ms / 60000).toFixed(1) + ' min';
+        }
+
+        autoSlider.addEventListener('input', () => {
+            autoDisplay.textContent = formatInterval(sliderToInterval(autoSlider.value));
+            if (autoTimer) restartAutoOrder();
+        });
+
+        function toggleAutoOrder() {
+            if (autoTimer) {
+                stopAutoOrder();
+            } else {
+                startAutoOrder();
+            }
+        }
+
+        function startAutoOrder() {
+            autoToggle.textContent = 'Stop Auto';
+            autoToggle.classList.add('running');
+            scheduleNext();
+        }
+
+        function stopAutoOrder() {
+            clearTimeout(autoTimer);
+            autoTimer = null;
+            autoToggle.textContent = 'Start Auto';
+            autoToggle.classList.remove('running');
+        }
+
+        function restartAutoOrder() {
+            clearTimeout(autoTimer);
+            scheduleNext();
+        }
+
+        function scheduleNext() {
+            const interval = sliderToInterval(autoSlider.value);
+            autoTimer = setTimeout(async () => {
+                await placeOrder();
+                if (autoTimer) scheduleNext();
+            }, interval);
+        }
+
+        // Initialize display
+        autoDisplay.textContent = formatInterval(sliderToInterval(autoSlider.value));
+
+        connectSSE();
+    </script>
+</body>
+</html>

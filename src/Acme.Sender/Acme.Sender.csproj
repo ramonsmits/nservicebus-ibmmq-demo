@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="NServiceBus" />
+    <PackageReference Include="NServiceBus.Heartbeat" />
+    <PackageReference Include="NServiceBus.Metrics.ServiceControl" />
+    <PackageReference Include="NServiceBus.Transport.IBMMQ" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Acme.Shared\Acme.Shared.csproj" />
+  </ItemGroup>
+</Project>
