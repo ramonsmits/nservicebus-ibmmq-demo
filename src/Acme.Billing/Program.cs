@@ -27,14 +27,14 @@ var host = Host.CreateDefaultBuilder(args)
             return Task.CompletedTask;
         });
 
-        var transport = new IBMMQTransport(o =>
+        var transport = new IBMMQTransport
         {
-            o.Host = Environment.GetEnvironmentVariable("IBMMQ_HOST") ?? "ibmmq";
-            o.Port = 1414;
-            o.QueueManagerName = "QM1";
-            o.Channel = Environment.GetEnvironmentVariable("IBMMQ_CHANNEL") ?? "APP.SVRCONN";
-            o.User = Environment.GetEnvironmentVariable("IBMMQ_USER") ?? "billing";
-        });
+            Host = Environment.GetEnvironmentVariable("IBMMQ_HOST") ?? "ibmmq",
+            Port = 1414,
+            QueueManagerName = "QM1",
+            Channel = Environment.GetEnvironmentVariable("IBMMQ_CHANNEL") ?? "APP.SVRCONN",
+            User = Environment.GetEnvironmentVariable("IBMMQ_USER") ?? "billing",
+        };
 
         transport.TransportTransactionMode = SimulationSettings.TransportTransactionMode;
         endpointConfiguration.UseTransport(transport);

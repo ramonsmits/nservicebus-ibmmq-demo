@@ -5,14 +5,14 @@ var endpointConfiguration = new EndpointConfiguration("Acme.Sender");
 
 endpointConfiguration.UseSerialization<SystemJsonSerializer>();
 
-var transport = new IBMMQTransport(o =>
+var transport = new IBMMQTransport
 {
-    o.Host = Environment.GetEnvironmentVariable("IBMMQ_HOST") ?? "localhost";
-    o.Port = 1414;
-    o.QueueManagerName = "QM1";
-    o.Channel = Environment.GetEnvironmentVariable("IBMMQ_CHANNEL") ?? "APP.SVRCONN";
-    o.User = Environment.GetEnvironmentVariable("IBMMQ_USER") ?? "sender";
-});
+    Host = Environment.GetEnvironmentVariable("IBMMQ_HOST") ?? "localhost",
+    Port = 1414,
+    QueueManagerName = "QM1",
+    Channel = Environment.GetEnvironmentVariable("IBMMQ_CHANNEL") ?? "APP.SVRCONN",
+    User = Environment.GetEnvironmentVariable("IBMMQ_USER") ?? "sender",
+};
 
 var routing = endpointConfiguration.UseTransport(transport);
 endpointConfiguration.EnableInstallers();

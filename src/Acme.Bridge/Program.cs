@@ -12,14 +12,14 @@ var host = Host.CreateDefaultBuilder(args)
             ?? "host=rabbitmq;username=guest;password=guest";
 
         // IBM MQ side
-        var ibmMqTransport = new IBMMQTransport(o =>
+        var ibmMqTransport = new IBMMQTransport
         {
-            o.Host = ibmMqHost;
-            o.Port = 1414;
-            o.QueueManagerName = "QM1";
-            o.Channel = Environment.GetEnvironmentVariable("IBMMQ_CHANNEL") ?? "APP.SVRCONN";
-            o.User = Environment.GetEnvironmentVariable("IBMMQ_USER") ?? "bridge";
-        });
+            Host = ibmMqHost,
+            Port = 1414,
+            QueueManagerName = "QM1",
+            Channel = Environment.GetEnvironmentVariable("IBMMQ_CHANNEL") ?? "APP.SVRCONN",
+            User = Environment.GetEnvironmentVariable("IBMMQ_USER") ?? "bridge",
+        };
 
         var ibmMq = new BridgeTransport(ibmMqTransport) { AutoCreateQueues = true };
         ibmMq.HasEndpoint("Acme.Sender");
