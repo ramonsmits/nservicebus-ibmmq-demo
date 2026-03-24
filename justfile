@@ -10,25 +10,25 @@ dotnet-build use_source="false":
 build:
     #!/usr/bin/env bash
     set -euo pipefail
-    podman-compose build &
-    podman-compose pull sc-ibmmq sc-audit-ibmmq sc-audit-rabbitmq sc-mon-ibmmq sc-mon-rabbitmq sc-rabbitmq &
+    podman compose build &
+    podman compose pull sc-ibmmq sc-audit-ibmmq sc-audit-rabbitmq sc-mon-ibmmq sc-mon-rabbitmq sc-rabbitmq &
     wait
 
 # Start infrastructure + endpoints
 up *ARGS:
-    podman-compose up -d --remove-orphans {{ARGS}}
+    podman compose up -d --remove-orphans {{ARGS}}
 
 # Stop everything
 down *ARGS:
-    podman-compose down {{ARGS}}
+    podman compose down {{ARGS}}
 
 # Follow logs
 logs:
-    podman-compose logs -f
+    podman compose logs -f
 
 # Recreate all containers (clears journald logs)
 recreate:
-    podman-compose up -d --force-recreate
+    podman compose up -d --force-recreate
 
 # Run the sender interactively on host
 sender:
