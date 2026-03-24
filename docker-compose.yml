@@ -188,6 +188,7 @@ services:
   servicepulse:
     container_name: servicepulse
     image: servicepulse:dev
+    pull_policy: never
     ports:
       - "9090:9090"
     environment:
