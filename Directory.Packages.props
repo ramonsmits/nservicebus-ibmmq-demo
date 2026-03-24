@@ -14,7 +14,7 @@
     <PackageVersion Include="NServiceBus.MessagingBridge" Version="5.0.1" />
     <PackageVersion Include="NServiceBus.Metrics.ServiceControl" Version="6.0.0" />
     <PackageVersion Include="NServiceBus.RabbitMQ" Version="11.0.0" />
-    <PackageVersion Include="NServiceBus.Transport.IBMMQ" Version="1.0.0-alpha.4" />
+    <PackageVersion Include="NServiceBus.Transport.IBMMQ" Version="1.0.0-alpha.5" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.0" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.0" />
     <PackageVersion Include="System.Text.Encoding.CodePages" Version="10.0.0" />
