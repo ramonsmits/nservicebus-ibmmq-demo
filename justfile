@@ -10,8 +10,8 @@ dotnet-build use_source="false":
 build:
     #!/usr/bin/env bash
     set -euo pipefail
-    podman compose build &
-    podman compose pull sc-ibmmq sc-audit-ibmmq sc-audit-rabbitmq sc-mon-ibmmq sc-mon-rabbitmq sc-rabbitmq &
+    podman compose build --parallel &
+    podman compose pull --parallel sc-ibmmq sc-audit-ibmmq sc-audit-rabbitmq sc-mon-ibmmq sc-mon-rabbitmq sc-rabbitmq &
     wait
 
 # Start infrastructure + endpoints
