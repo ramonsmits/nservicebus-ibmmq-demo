@@ -21,6 +21,9 @@ var host = Host.CreateDefaultBuilder(args)
             User = Environment.GetEnvironmentVariable("IBMMQ_USER") ?? "bridge",
         };
 
+        ibmMqTransport.Topology.SubscribeTo<OrderPlaced, OrderPlaced>();
+        ibmMqTransport.Topology.SubscribeTo<OrderPlaced, ExpressOrderPlaced>();
+
         var ibmMq = new BridgeTransport(ibmMqTransport) { AutoCreateQueues = true };
         ibmMq.HasEndpoint("Acme.Sender");
         ibmMq.HasEndpoint("Acme.Sales");
