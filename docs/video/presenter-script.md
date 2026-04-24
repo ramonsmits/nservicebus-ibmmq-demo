@@ -82,6 +82,10 @@ await host.RunAsync();
 
 **VO:** "Name the endpoint. Wire up the transport — the same connection values any MQ client uses: host, port, queue manager, channel, user. `EnableInstallers` auto-provisions queues and topic subscriptions in dev."
 
+**[Editor note]** Arrow/zoom onto `UseTransport(transport)` as it's typed.
+
+**[Editor note]** Tooltip overlay on `EnableInstallers()` — "auto-creates queues + topic subscriptions in dev".
+
 ### Beat 4 — consistency beat (~10s)
 
 **Do:** Cursor hovering on the transport block; pause for emphasis.
@@ -114,6 +118,8 @@ sealed class OrderPlacedHandler(ILogger<OrderPlacedHandler> logger)
 ```
 
 **VO:** "One handler class. Strongly-typed contract. Log it."
+
+**[Editor note]** Highlight `IHandleMessages<OrderPlaced>` on the class declaration.
 
 ### Beat 6 — stability beat (~10s)
 
