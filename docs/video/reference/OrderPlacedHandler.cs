@@ -1,0 +1,19 @@
+// Final-state reference for Acme.Billing/OrderPlacedHandler.cs
+// Typed live during scene 3 beat 5.
+
+using Microsoft.Extensions.Logging;
+using NServiceBus;
+
+namespace Acme;
+
+sealed class OrderPlacedHandler(ILogger<OrderPlacedHandler> logger)
+    : IHandleMessages<OrderPlaced>
+{
+    public Task Handle(OrderPlaced message, IMessageHandlerContext context)
+    {
+        logger.LogInformation(
+            "Received OrderPlaced {{ OrderId = {OrderId}, Product = {Product}, Quantity = {Quantity} }}",
+            message.OrderId, message.Product, message.Quantity);
+        return Task.CompletedTask;
+    }
+}
