@@ -66,7 +66,7 @@ Branding note: follow existing Particular.net / NServiceBus visual identity. Inc
 
 - `docs.particular.net`
 - `nuget.org/packages/NServiceBus.Transport.IBMMQ`
-- Link to the announcement blog post (URL TBD — insert before rendering)
+- `particular.net/blog/nservicebus-transport-ibmmq` (the announcement blog post — staged at `ibm.test.particular.net/blog/nservicebus-transport-ibmmq` until publish)
 
 **End card (final 3 seconds):** NServiceBus + IBM MQ logo lockup, single URL — `docs.particular.net`.
 
