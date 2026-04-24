@@ -8,6 +8,7 @@ dotnet-build use_source="false":
 
 # Build all container images (pulls ServiceControl from ghcr.io)
 build:
+    mkdir .packages
     #!/usr/bin/env bash
     set -euo pipefail
     podman compose build --parallel &
